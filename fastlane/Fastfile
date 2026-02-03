@@ -1,0 +1,85 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and submit to App Store"
+  lane :release do
+    setup_ci
+    
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_API_ISSUER_ID"],
+      key_content: ENV["APP_STORE_CONNECT_API_KEY_CONTENT"],
+      is_key_content_base64: true
+    )
+    
+    match(
+      type: "appstore",
+      app_identifier: "com.oreomcflurry.ddaycounter",
+      git_url: ENV["MATCH_GIT_URL"],
+      readonly: is_ci,
+      api_key: api_key
+    )
+    
+    build_app(
+      workspace: "ios/DDayCounter.xcworkspace",
+      scheme: "DDayCounter",
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "DDayCounter.ipa"
+    )
+    
+    upload_to_app_store(
+      api_key: api_key,
+      skip_metadata: true,
+      skip_screenshots: true,
+      submit_for_review: false,
+      automatic_release: false,
+      precheck_include_in_app_purchases: false
+    )
+  end
+  
+  desc "Register new device"
+  lane :register_device do |options|
+    register_devices(
+      devices: {
+        options[:name] => options[:udid]
+      }
+    )
+  end
+  
+  desc "Create app on App Store Connect"
+  lane :create_app do
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_API_ISSUER_ID"],
+      key_content: ENV["APP_STORE_CONNECT_API_KEY_CONTENT"],
+      is_key_content_base64: true
+    )
+    
+    produce(
+      api_key: api_key,
+      app_identifier: "com.oreomcflurry.ddaycounter",
+      app_name: "D-Day Counter",
+      language: "Korean",
+      app_version: "1.0.0",
+      sku: "com.oreomcflurry.ddaycounter"
+    )
+  end
+  
+  desc "Generate certificates"
+  lane :certificates do
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_API_ISSUER_ID"],
+      key_content: ENV["APP_STORE_CONNECT_API_KEY_CONTENT"],
+      is_key_content_base64: true
+    )
+    
+    match(
+      type: "appstore",
+      app_identifier: "com.oreomcflurry.ddaycounter",
+      git_url: ENV["MATCH_GIT_URL"],
+      api_key: api_key
+    )
+  end
+end
